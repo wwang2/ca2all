@@ -1,4 +1,7 @@
-import os, glob, re, sys
+import os
+import glob
+import re
+import sys
 import argparse
 
 from tempfile import mkstemp
@@ -7,7 +10,9 @@ from os.path import basename
 from modeller import *
 from modeller.automodel import *
 
-__all__ = ['ca2all']
+_PIR_TEMPLATE = '\n'.join(
+    ['>P1;%s', 'sequence:::::::::', '%s', '*', '', '>P1;model_ca', 'structure:%s:FIRST:@:END:@::::', '*']
+)
 
 
 def ca2all(filename, output=None, iterations=1, verbose=False):
@@ -62,16 +67,7 @@ def ca2all(filename, output=None, iterations=1, verbose=False):
 
         pir = prefix + '.pir'
         with open(pir, 'w') as f:
-            f.write(
-""">P1;%s
-sequence:::::::::
-%s
-*
-
->P1;model_ca
-structure:%s:FIRST:@:END:@::::
-*""" % (prefix, seq, pdb)
-            )
+            f.write(_PIR_TEMPLATE % (prefix, seq, pdb))
 
         env = environ()
         env.io.atom_files_directory = ['.']
@@ -89,7 +85,7 @@ structure:%s:FIRST:@:END:@::::
         )
 
         mdl.md_level = refine.slow
-        mdl.auto_align()
+        mdl.auto_align(matrix_file=prefix + '.mat')
         mdl.starting_model = 1
         mdl.ending_model = int(iterations)
         mdl.final_malign3d = True
@@ -124,8 +120,9 @@ structure:%s:FIRST:@:END:@::::
                 else:
                     outfile.write(line)
     finally:
-        junk = ['family.mat'] + glob.glob(prefix + '*')
+        junk = glob.glob(prefix + '*')
         map(os.remove, junk)
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
