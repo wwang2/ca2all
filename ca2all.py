@@ -93,7 +93,8 @@ def ca2all(filename, output=None, iterations=1, verbose=False):
 
         models = [m for m in mdl.outputs if m['failure'] is None]
         cmp_key = 'DOPE score'
-        models.sort(lambda x, y: cmp(x[cmp_key], y[cmp_key]))
+
+        models = sorted(models, key=lambda d: d['DOPE score'])
         final = models[0]['name'].rsplit('.', 1)[0] + '_fit.pdb'
 
         sys.stdout = old_stdout
@@ -110,7 +111,7 @@ def ca2all(filename, output=None, iterations=1, verbose=False):
                     res = line[21:27]
                     if not current or current != res:
                         current = res
-                        ch, r, t = a.next()[1:]
+                        ch, r, t = next(a)[1:]
                     nl = line[:21] + ch + r + line[27:54] + t
                     if len(line) > 66:
                         nl += line[66:]
